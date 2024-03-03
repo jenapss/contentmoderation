@@ -1,6 +1,0 @@
-[core]
-    remote = mycloudstorage
-    analytics = false
-['remote "mycloudstorage"']
-    url = ssh://user@95.85.126.74:3022/cloud_data_repo
-    ask_password = true

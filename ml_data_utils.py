@@ -3,7 +3,7 @@ Module for Moderation feedback
 
 1. Downloading images from BANNED & NORM IMAGES.txt to local storage
 2. Check if BANNED & NORM IMAGES txt files for limit - if some image number limit is reached then download it and then delete all rows
-3. 
+3.
 """
 import shutil
 import imghdr
@@ -15,16 +15,18 @@ def parse_and_download_images(collected_images_path):
     Parse & download images from BANNED & NORM IMAGES txt files
 
     args:
-
+asdasdasdasda
     """
     txt_file = open(collected_images_path, 'r')
     lines = txt_file.read().splitlines()
     for line in lines:
+        sdffs= 0
+        adasdasd =0
         #print(line)
         image_path, classification_str = line.strip().split(" ---> ")
         #print(len(line.strip().split(" ---> ")))
         #shutil.copy2(image_path, DATASET_DEST_PATH)
-        
+
         print(image_path)
     return None
 
@@ -48,7 +50,7 @@ def image_prep_in_bytes(image_content: bytes, image_size=(299, 299)):
 
     """
     Image dataset prep function
-    
+
     """
     #print("00000000",type(image_content))
     try:
@@ -69,7 +71,7 @@ def image_prep_in_bytes(image_content: bytes, image_size=(299, 299)):
         jpg_bytearray = io.BytesIO()
         image.save(jpg_bytearray, format="JPEG")
         jpg_bytearray = jpg_bytearray.getvalue()
-        
+
         #finally load to keras
         image = keras.preprocessing.image.load_img(io.BytesIO(jpg_bytearray), target_size=image_size)
     image_array = keras.preprocessing.image.img_to_array(image)
@@ -92,10 +94,10 @@ def data_validation(train_set_path, test_set_path):
     for folder_path in [train_set_path, test_set_path]:
         for filename in os.listdir(folder_path):
             file_path = os.path.join(folder_path, filename)
-            
+
             if os.path.isfile(file_path):
                 file_extension = filename.split('.')[-1].lower()
                 image_format = imghdr.what(file_path)
-    return image_format 
+    return image_format
 
 
