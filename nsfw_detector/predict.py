@@ -1,30 +1,50 @@
-#! python
+"""
+This script provides functions for loading images, loading
+a pre-trained NSFW (Not Safe For Work) detection model,
+classifying images using the loaded model, and decoding the predictions.
 
-import argparse
-import json
+Functions:
+1. load_images(image_paths, image_size, verbose=True) -> Tuple[np.ndarray, List[str]]:
+    Loads images into numpy arrays for passing to model.predict.
+
+2. load_model(model_path: str) -> keras.Model:
+    Loads a pre-trained model for NSFW content detection from the specified path.
+
+3. classify(model, input_paths, image_dim=IMAGE_DIM, predict_args={}) -> Dict[str, Dict[str, float]]:
+    Classifies images given a model, input paths, and image dimensionality.
+
+4. classify_nd(model, nd_images, predict_args={}) -> List[Dict[str, float]]:
+    Classifies images given a model and image array (numpy).
+
+Variables:
+- IMAGE_DIM (int): Required/default image dimensionality.
+
+"""
 from os import listdir
 from os.path import isfile, join, exists, isdir, abspath
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import tensorflow_hub as hub
-
+from keras.applications.inception_v3 import decode_predictions
 
 IMAGE_DIM = 299   # required/default image dimensionality
 
 def load_images(image_paths, image_size, verbose=True):
-    '''
-    Function for loading images into numpy arrays for passing to model.predict
-    inputs:
-        image_paths: list of image paths to load
-        image_size: size into which images should be resized
-        verbose: show all of the image path and sizes loaded
+    """
+    Loads a pre-trained model for NSFW (Not Safe For Work) content
+    detection from the specified path.
 
-    outputs:
-        loaded_images: loaded images on which keras model can run predictions
-        loaded_image_indexes: paths of images which the function is able to process
+    Args:
+        model_path (str): The path to the pre-trained model file.
 
-    '''
+    Returns:
+        keras.Model: The loaded pre-trained model.
+
+    Raises:
+        FileNotFoundError: If the specified model file is not found.
+        ValueError: If the specified model file is invalid or cannot be loaded.
+    """
     loaded_images = []
     loaded_image_paths = []
 
@@ -49,10 +69,27 @@ def load_images(image_paths, image_size, verbose=True):
     return np.asarray(loaded_images), loaded_image_paths
 
 def load_model(model_path):
+    """
+    Loads a pre-trained model for NSFW (Not Safe For Work) content
+    detection from the specified path.
+
+    Args:
+        model_path (str): The path to the pre-trained model file.
+
+    Returns:
+        keras.Model: The loaded pre-trained model.
+
+    Raises:
+        FileNotFoundError: If the specified model file is not found.
+        ValueError: If the specified model file is invalid or cannot be loaded.
+    """
     if model_path is None or not exists(model_path):
-    	raise ValueError("saved_model_path must be the valid directory of a saved model to load.")
-    model = tf.keras.models.load_model(model_path, custom_objects={'KerasLayer': hub.KerasLayer},compile=False)
+        raise ValueError("saved_model_path must be the valid directory of a saved model to load.")
+    model = tf.keras.models.load_model(model_path,
+                                       custom_objects={'KerasLayer': hub.KerasLayer},
+                                       compile=False)
     return model
+
 
 
 def classify(model, input_paths, image_dim=IMAGE_DIM, predict_args={}):
@@ -73,46 +110,16 @@ def classify_nd(model, nd_images, predict_args={}):
     Optionally, pass predict_args that will be passed to tf.keras.Model.predict().
     """
     model_preds = model.predict(nd_images, **predict_args)
-    # preds = np.argsort(model_preds, axis = 1).tolist()
-
-    categories = ['class1', 'class2', 'class2', 'class3', 'class4']
-
+    # the model returns 1000 outputs
+    # decode the prediction output to get only
+    decoded_preds = decode_predictions(model_preds, top=5)
+    categories = ['snail', 'slug', 'tiger', 'tiger_cat', 'leopard']
     probs = []
-    for i, single_preds in enumerate(model_preds):
+    for single_preds in decoded_preds:
         single_probs = {}
-        for j, pred in enumerate(single_preds):
-            single_probs[categories[j]] = float(pred)
+        for label, description, probability in single_preds:
+            # Map the description to your predefined categories
+            if description in categories:
+                single_probs[description] = float(probability)
         probs.append(single_probs)
     return probs
-
-
-def main(args=None):
-    parser = argparse.ArgumentParser(
-        description="""A script to perform NFSW classification of images""",
-        epilog="""
-        Launch with default model and a test image
-            python nsfw_detector/predict.py --saved_model_path mobilenet_v2_140_224 --image_source test.jpg
-    """, formatter_class=argparse.RawTextHelpFormatter)
-
-    submain = parser.add_argument_group('main execution and evaluation functionality')
-    submain.add_argument('--image_source', dest='image_source', type=str, required=True, 
-                            help='A directory of images or a single image to classify')
-    submain.add_argument('--saved_model_path', dest='saved_model_path', type=str, required=True, 
-                            help='The model to load')
-    submain.add_argument('--image_dim', dest='image_dim', type=int, default=IMAGE_DIM,
-                            help="The square dimension of the model's input shape")
-    if args is not None:
-        config = vars(parser.parse_args(args))
-    else:
-        config = vars(parser.parse_args())
-
-    if config['image_source'] is None or not exists(config['image_source']):
-    	raise ValueError("image_source must be a valid directory with images or a single image to classify.")
-
-    model = load_model(config['saved_model_path'])
-    image_preds = classify(model, config['image_source'], config['image_dim'])
-    print(json.dumps(image_preds, indent=2), '\n')
-
-
-if __name__ == "__main__":
-	main()
