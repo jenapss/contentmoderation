@@ -75,7 +75,7 @@ def classify_nd(model, nd_images, predict_args={}):
     model_preds = model.predict(nd_images, **predict_args)
     # preds = np.argsort(model_preds, axis = 1).tolist()
 
-    categories = ['class1', 'class2', 'class2', 'class3', 'class4']
+    categories = ['class1', 'class2', 'class3, 'class4', 'class5']
 
     probs = []
     for i, single_preds in enumerate(model_preds):

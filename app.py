@@ -52,17 +52,8 @@ def decision_function(result, image_path):
     try:
         nsfw_threshold = 0.95
         nsfw_categories = ["class1", "class2"]
-        max_probs = sorted(result[0].items(), key=lambda x: x[1], reverse=True)[:2]
+        max_probs = sorted(result[0].items(), key = lambda x:  x[1], reverse = True)[:2]
         for category, prob in max_probs:
-            if category == "class3" and prob > 0.99:
-                    # collect analytics for moderation model upgrade
-                    with open('BANNED_IMAGES.txt', 'a') as f:
-                        f.write("\n{} ---> {} TIME: {}".format(image_path, max_probs, str(datetime.now())))
-            # NSFW content detected, decline the photo
-            else:
-                # collect analytics for moderation model upgrade
-                with open('NORM_IMAGES.txt', 'a') as f:
-                        f.write("\n{} ---> {} TIME: {}".format(image_path, max_probs,str(datetime.now())))
             if category in nsfw_categories and prob > nsfw_threshold:
                 # collect analytics for moderation model upgrade
                 with open('BANNED_IMAGES.txt', 'a') as f:
@@ -70,11 +61,10 @@ def decision_function(result, image_path):
 
                 data = {"decision": True, "detailed_info": max_probs}
                 return JSONResponse(content={ "status": True, "message": "СКАЙНЕТ РАБОТАЕТ", "code": "SS-10000","data": data})
-        # No NSFW content detected, don't decline the photo
-
-        # collect analytics for moderation model upgrade
-        with open('NORM_IMAGES.txt', 'a') as f:
-            f.write("\n{} ---> {} TIME: {}".format(image_path, max_probs,str(datetime.now())))
+            else:
+                # collect analytics for moderation model upgrade
+                with open('NORM_IMAGES.txt', 'a') as f:
+                        f.write("\n{} ---> {} TIME: {}".format(image_path, max_probs,str(datetime.now())))
 
 
         data = {"decision": False, "detailed_info": max_probs}
