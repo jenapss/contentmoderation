@@ -78,3 +78,11 @@
 /Users/jelaleddin/Downloads/1705569775662709193-700.webp ---> [('sexy', 0.9831181764602661), ('neutral', 0.008765132166445255)] TIME: 2024-01-18 14:51:05.869161
 /Users/jelaleddin/Downloads/1705569775662709193-700.webp ---> [('sexy', 0.9831181764602661), ('neutral', 0.008765132166445255)] TIME: 2024-01-18 14:51:05.874702
 /Users/jelaleddin/Downloads/1705569775662709193-700.webp ---> [('sexy', 0.9831181764602661), ('neutral', 0.008765132166445255)] TIME: 2024-01-18 14:51:05.874811
+The image file ---> [('tiger', 0.9075989723205566), ('tiger_cat', 0.03835958242416382)] TIME: 2024-03-07 05:49:29.250235
+https://files.worldwildlife.org/wwfcmsprod/images/Tiger_resting_Bandhavgarh_National_Park_India/hero_small/6aofsvaglm_Medium_WW226365.jpg ---> [('tiger', 0.8250952959060669), ('tiger_cat', 0.08731059730052948)] TIME: 2024-03-07 05:59:51.810462
+C:\Users\sulta\Downloads\download. jpg ---> [('tiger', 0.9075989723205566), ('tiger_cat', 0.03835958242416382)] TIME: 2024-03-07 06:02:30.328475
+https://upload.wikimedia.org/wikipedia/commons/a/a1/Namibie_Etosha_Leopard_01edit.jpg ---> [('leopard', 0.8898948431015015)] TIME: 2024-03-07 06:14:02.040880
+The image file ---> [('snail', 0.9970670342445374), ('slug', 0.00046261207899078727)] TIME: 2024-03-07 06:23:25.709709
+The image file ---> [('tiger', 0.9075989723205566), ('tiger_cat', 0.03835958242416382)] TIME: 2024-03-07 06:30:51.807310
+C:\Users\sulta\Downloads\download.jpg ---> [('tiger', 0.9075989723205566), ('tiger_cat', 0.03835958242416382)] TIME: 2024-03-07 06:31:15.619919
+https://files.worldwildlife.org/wwfcmsprod/images/Tiger_resting_Bandhavgarh_National_Park_India/hero_small/6aofsvaglm_Medium_WW226365.jpg ---> [('tiger', 0.8250952959060669), ('tiger_cat', 0.08731059730052948)] TIME: 2024-03-07 06:31:42.026920

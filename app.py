@@ -8,11 +8,12 @@ import numpy as np
 import io
 import PIL
 from datetime import datetime
+
 from PIL import Image
 app = FastAPI()
 
 # Load the model when the application starts
-model_path = 'updated_modelv3.h5'
+model_path = 'inception_v3.h5'
 model = predict.load_model(model_path)
 
 def download_file(url: str):
@@ -51,24 +52,24 @@ def load_image_from_bytes(image_content: bytes, image_size=(299, 299)):
 def decision_function(result, image_path):
     try:
         nsfw_threshold = 0.95
-        nsfw_categories = ["class1", "class2"]
+        nsfw_categories = ["snail", "slug"]
         max_probs = sorted(result[0].items(), key = lambda x:  x[1], reverse = True)[:2]
         for category, prob in max_probs:
+            # checking for NSFW image presense
             if category in nsfw_categories and prob > nsfw_threshold:
                 # collect analytics for moderation model upgrade
                 with open('BANNED_IMAGES.txt', 'a') as f:
                     f.write("\n{} ---> {} TIME: {}".format(image_path, max_probs, str(datetime.now())))
-
                 data = {"decision": True, "detailed_info": max_probs}
                 return JSONResponse(content={ "status": True, "message": "СКАЙНЕТ РАБОТАЕТ", "code": "SS-10000","data": data})
+
             else:
+                # if image category not in the nsfw list
                 # collect analytics for moderation model upgrade
                 with open('NORM_IMAGES.txt', 'a') as f:
                         f.write("\n{} ---> {} TIME: {}".format(image_path, max_probs,str(datetime.now())))
-
-
-        data = {"decision": False, "detailed_info": max_probs}
-        return JSONResponse(content={ "status": True, "message": "СКАЙНЕТ РАБОТАЕТ", "code": "SS-10000","data": data})
+                        data = {"decision": False, "detailed_info": max_probs}
+                        return JSONResponse(content={ "status": False, "message": "СКАЙНЕТ РАБОТАЕТ", "code": "SS-10000","data": data})
     except Exception as e:
         return {"Message": "{}".format(e)}
 
@@ -81,14 +82,15 @@ async def classify_image(url: str = Form(None), file: UploadFile = File(None), i
     if file is not None:
         try:
             uploaded_image = file.file.read()
+            #print(type(uploaded_image))
+            nd_images = load_image_from_bytes(uploaded_image)
+            #print(type(nd_images))
+            result = predict.classify_nd(model,nd_images)
         except Exception as e:
             #return JSONResponse(content={f"Message": "{}".format(e)})
             return JSONResponse(content={ "status": False, "message": "ERROR", "code": "SS-10000","data": e})
-        #print(type(uploaded_image))
-        nd_images = load_image_from_bytes(uploaded_image)
-        #print(type(nd_images))
-        result = predict.classify_nd(model,nd_images)
-        return decision_function(result)
+
+        return decision_function(result, "The image file")
 
     elif url is not None:
         try:
@@ -99,7 +101,7 @@ async def classify_image(url: str = Form(None), file: UploadFile = File(None), i
         #print(type(image_content))
         nd_images = load_image_from_bytes(image_content)
         result = predict.classify_nd(model, nd_images)
-        return decision_function(result)
+        return decision_function(result, url)
 
     elif image_path is not None:
         # read image file
@@ -119,9 +121,10 @@ async def classify_image(url: str = Form(None), file: UploadFile = File(None), i
 
 @app.get("/health")
 async def health_check():
+    print("HERE")
     return {
             "status": True,
-            "message": "Malades !!!",
+            "message": "Molodec !!!",
             "code": "SS-10000",
             "data": "СКАЙНЕТ РАБОТАЕТ"
             }
