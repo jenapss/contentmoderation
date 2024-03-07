@@ -82,9 +82,7 @@ async def classify_image(url: str = Form(None), file: UploadFile = File(None), i
     if file is not None:
         try:
             uploaded_image = file.file.read()
-            #print(type(uploaded_image))
             nd_images = load_image_from_bytes(uploaded_image)
-            #print(type(nd_images))
             result = predict.classify_nd(model,nd_images)
         except Exception as e:
             #return JSONResponse(content={f"Message": "{}".format(e)})
