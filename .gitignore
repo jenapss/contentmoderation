@@ -5,3 +5,6 @@ jelaljupyter.ipynb
 __pycache__/app.cpython-38.pyc
 __pycache__/app.cpython-38.pyc
 __pycache__/
+inception_v3.h5
+.\NORM_IMAGES.txt
+.\BANNED_IMAGES.txt
