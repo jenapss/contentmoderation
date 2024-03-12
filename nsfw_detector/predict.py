@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import tensorflow_hub as hub
-
+from tensorflow.keras.applications.inception_v3 import decode_predictions
 
 IMAGE_DIM = 299   # required/default image dimensionality
 
@@ -73,46 +73,25 @@ def classify_nd(model, nd_images, predict_args={}):
     Optionally, pass predict_args that will be passed to tf.keras.Model.predict().
     """
     model_preds = model.predict(nd_images, **predict_args)
+    # the model returns 1000 outputs
     # preds = np.argsort(model_preds, axis = 1).tolist()
+    # decode the prediction output to get only
+    decoded_preds = decode_predictions(model_preds, top=5)
+    categories = ['snail', 'slug', 'tiger', 'tiger_cat', 'leopard']
 
-    categories = ['class1', 'class2', 'class2', 'class3', 'class4']
-
+    # probs = []
+    # for i, single_preds in enumerate(decoded_preds):
+    #     single_probs = {}
+    #     for j, pred in enumerate(single_preds):
+    #         single_probs[categories[j]] = float(pred)
+    #     probs.append(single_probs)
+    #  return probs
     probs = []
-    for i, single_preds in enumerate(model_preds):
+    for single_preds in decoded_preds:
         single_probs = {}
-        for j, pred in enumerate(single_preds):
-            single_probs[categories[j]] = float(pred)
+        for label, description, probability in single_preds:
+            # Map the description to your predefined categories
+            if description in categories:
+                single_probs[description] = float(probability)
         probs.append(single_probs)
     return probs
-
-
-def main(args=None):
-    parser = argparse.ArgumentParser(
-        description="""A script to perform NFSW classification of images""",
-        epilog="""
-        Launch with default model and a test image
-            python nsfw_detector/predict.py --saved_model_path mobilenet_v2_140_224 --image_source test.jpg
-    """, formatter_class=argparse.RawTextHelpFormatter)
-
-    submain = parser.add_argument_group('main execution and evaluation functionality')
-    submain.add_argument('--image_source', dest='image_source', type=str, required=True, 
-                            help='A directory of images or a single image to classify')
-    submain.add_argument('--saved_model_path', dest='saved_model_path', type=str, required=True, 
-                            help='The model to load')
-    submain.add_argument('--image_dim', dest='image_dim', type=int, default=IMAGE_DIM,
-                            help="The square dimension of the model's input shape")
-    if args is not None:
-        config = vars(parser.parse_args(args))
-    else:
-        config = vars(parser.parse_args())
-
-    if config['image_source'] is None or not exists(config['image_source']):
-    	raise ValueError("image_source must be a valid directory with images or a single image to classify.")
-
-    model = load_model(config['saved_model_path'])
-    image_preds = classify(model, config['image_source'], config['image_dim'])
-    print(json.dumps(image_preds, indent=2), '\n')
-
-
-if __name__ == "__main__":
-	main()
