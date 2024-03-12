@@ -8,6 +8,7 @@ Module for Moderation feedback
 import shutil
 import imghdr
 import os
+import keras
 DATASET_DEST_PATH = "./img_dataset"
 
 def parse_and_download_images(collected_images_path):
