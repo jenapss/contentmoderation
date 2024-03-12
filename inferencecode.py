@@ -17,10 +17,6 @@ Functions:
     Handles inference requests by downloading the image file from a URL, uploading a file,
     or specifying a local file path. Performs NSFW content detection and returns a JSON response.
 
-Variables:
-- IMAGE_DIM: The dimensions (width and height) of the input images for the NSFW detection model.
-- model_path: The path to the pre-trained NSFW detection model.
-- model: The pre-trained NSFW detection model loaded from the specified path.
 """
 from datetime import datetime
 from fastapi import File, Form, UploadFile
