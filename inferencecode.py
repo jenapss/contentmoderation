@@ -1,4 +1,4 @@
-from nsfw_detector import predict 
+from nsfw_detector import predict
 # import argparse
 # import json
 # from os import listdir
@@ -9,7 +9,7 @@ from nsfw_detector import predict
 # from tensorflow import keras
 # import tensorflow_hub as hub
 
-# IMAGE_DIM = 299 
+# IMAGE_DIM = 299
 
 # def load_images(image_paths, image_size, verbose=True):
 #     '''
@@ -18,11 +18,11 @@ from nsfw_detector import predict
 #         image_paths: list of image paths to load
 #         image_size: size into which images should be resized
 #         verbose: show all of the image path and sizes loaded
-    
+
 #     outputs:
 #         loaded_images: loaded images on which keras model can run predictions
 #         loaded_image_indexes: paths of images which the function is able to process
-    
+
 #     '''
 #     loaded_images = []
 #     loaded_image_paths = []
