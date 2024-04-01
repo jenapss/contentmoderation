@@ -121,9 +121,5 @@ def classify_nd(model, nd_images, predict_args={}):
             # Map the description to your predefined categories
             if description in categories:
                 single_probs[description] = float(probability)
-        for label, description, probability in single_preds:
-            # Map the description to your predefined categories
-            if description in categories:
-                single_probs[description] = float(probability)
         probs.append(single_probs)
     return probs

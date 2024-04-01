@@ -29,17 +29,17 @@ Example Usage:
 """
 from fastapi import FastAPI, File, Form, UploadFile
 from inferencecode import make_inference
+from ml_data_utils import norm_banned_image_fetch
 app = FastAPI()
 
 @app.post("/classify")
-async def classify_image(url: str = Form(None),
-                                        file: UploadFile = File(None),
-                                        image_path: str = Form(None)):
+async def classify_image(image_path: str = Form(None),
+                                        file: UploadFile = File(None)):
     """
     Classify images provided via URL, file upload, or file path.
 
     Args:
-        url (str, optional): URL of the image to classify. Defaults to None.
+        url (str, optional): URL of the image to classify. Defaults    to None.
         file (UploadFile, optional): Uploaded image file. Defaults to None.
         image_path (str, optional): Local path of the image file. Defaults to None.
 
@@ -47,7 +47,20 @@ async def classify_image(url: str = Form(None),
         JSONResponse: JSON response containing the classification results.
     """
 
-    return make_inference(url, file, image_path)
+    return make_inference(file = file, image_path = image_path)
+
+@app.post("/fetchimages")
+
+async def fetch_images(request_data: dict):
+    normal_images_path = request_data.get("normal_images_path", None)
+    banned_images_path = request_data.get("banned_images_path", None)
+    batch_size = request_data.get("batch_size", 5)
+
+    # if not normal_images_path or not banned_images_path:
+    #     return {"error": "Missing required parameters"}
+
+    return norm_banned_image_fetch(normal_images_path, banned_images_path, batch_size)
+
 
 @app.get("/health")
 async def health_check():
@@ -60,7 +73,7 @@ async def health_check():
     print("HERE")
     return {
             "status": True,
-            "message": "Molodec !!!",
+            "message": "Good Job !!!",
             "code": "SS-10000",
             "data": "СКАЙНЕТ РАБОТАЕТ"
             }
