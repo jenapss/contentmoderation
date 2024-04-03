@@ -16,10 +16,30 @@ Functions:
 
 Variables:
 - DATASET_DEST_PATH: The destination path for the image dataset.
+
+This module provides functions for image preprocessing, parsing, and data validation.
+
+Functions:
+1. load_image_from_bytes(image_content: bytes, image_size=(299, 299)) -> np.array:
+    Load an image from bytes, preprocess it, and return it as a numpy array.
+
+2. parse_and_download_images(collected_images_path: str) -> None:
+    Parse and download images from BANNED & NORM IMAGES text files.
+
+3. check_image_count(filename: str) -> int:
+    Count the number of lines in a file.
+
+4. data_validation(train_set_path: str, test_set_path: str) -> bool:
+    Check if all images in the training and testing datasets are in valid formats.
+
+Variables:
+- DATASET_DEST_PATH: The destination path for the image dataset.
 """
 import imghdr
 import base64
 import os
+import io
+import PIL
 import io
 import PIL
 import keras
@@ -34,14 +54,58 @@ from fastapi import File, Form, UploadFile
 import logging
 from pathlib import Path
 import tempfile
-DATASET_DEST_PATH = "./img_dataset"
-SAVE_PATH = ""
 import logging
 import requests
-
+import json
+from datetime import datetime
+import json
+from datetime import datetime
 logger = logging.getLogger(__name__)
+import yaml
 
-UPLOAD_DIR = "C:\\Users\\sulta\\Downloads\\contentmoderation\\UPLOADED_IMAGES"
+def load_constants(file_path):
+    with open(file_path, 'r') as file:
+        constants = yaml.safe_load(file)
+    return constants
+constants = load_constants('constants.yaml')
+
+#UPLOAD_DIR = constants['UPLOAD_DIR']
+DATASET_DEST_PATH = constants['DATASET_DEST_PATH']
+UPLOADED_IMAGE_PATHS = constants['UPLOADED_IMAGE_PATHS']
+
+
+
+def log_results(image_path, classification_decision, verdict):
+    """
+    Logs the feedback for the image classification.
+    Calledd from /feedback endpoint with such command:
+    curl -X POST -H "Content-Type: application/json" -d "{\"status\": true, \"data\": {\"detailed_info\": [[\"leopard\", 0.9076730608940125]]}}" \
+    "http://localhost:8000/feedback?image_path=/path/to/image.jpg&verdict=1"
+
+    Args:
+        image_path (str): The path of the image.
+        classification_decision (dict): The classification decision containing status and data.
+        verdict (int): The verdict provided (0 or 1).
+
+    Returns:
+        None
+    """
+    status = classification_decision["status"]
+    detailed_info = classification_decision["data"]["detailed_info"]
+
+    if status == 'true':
+        if verdict == 1:
+            filename = 'BANNED_IMAGES.txt'
+        else:
+            filename = 'NORM_IMAGES.txt'
+    else:
+        if verdict == 1:
+            filename = 'NORM_IMAGES.txt'
+        else:
+            filename = 'BANNED_IMAGES.txt'
+
+    with open(filename, 'a', encoding='utf-8') as f:
+        f.write(f"\n{image_path} ---> {detailed_info} TIME: {datetime.now()}")
 
 def load_image_from_url(url):
     """
@@ -61,32 +125,6 @@ def load_image_from_url(url):
         logger.exception(f"Error fetching image from URL in load_image_from_url: {e}")
         return None
 
-def save_uploaded_file(upload_file: UploadFile) -> str:
-    """
-    Save the uploaded file to the specified directory.
-    Returns the path where the file is saved.
-    """
-    # Create the directory if it doesn't exist
-    Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
-
-    # Construct the path to save the file
-    file_path = os.path.join(UPLOAD_DIR, upload_file.filename)
-
-    try:
-        # Ensure the file pointer is at the beginning
-        upload_file.file.seek(0)
-
-        # Write the file contents to the specified path
-        with open(file_path, "wb") as buffer:
-            buffer.write(upload_file.file.read())
-    except Exception as e:
-        # Handle any errors that occur during file saving
-        print(f"Error saving file: {e}")
-        return None
-
-    return file_path
-
-
 def download_file(file: UploadFile = File(None),
                             image_path: str = Form(None)):
     """
@@ -102,11 +140,12 @@ def download_file(file: UploadFile = File(None),
         HTTPError: If the HTTP request to the URL fails.
     """
     logger = logging.getLogger(__name__)
-    downloaded_path = ""
-    if file is not None:
+
+    if file:
         uploaded_image = file.file.read()
-        downloaded_path = save_uploaded_file(file)
-    elif image_path is not None:
+        image_name = file.filename
+        downloaded_path = os.path.join(UPLOADED_IMAGE_PATHS, image_name)
+    elif image_path:
         logger.info("IMAGE PATH: %s", image_path)  # Add logging here
         with open(image_path, 'rb') as f:
             uploaded_image = f.read()
@@ -117,18 +156,13 @@ def download_file(file: UploadFile = File(None),
     return uploaded_image, downloaded_path
 
 
-def load_image_from_bytes(image_content: bytes, image_size=(299, 299)):
-    """"
-    Turn the images to the correct format -> keras format
-
-    Args:
-        image_content : (bytes) the image itself
-        image_size: size of image array
-
-    Return:
-        Keras preprocessed image array
+def image_prep_in_bytes(image_content: bytes, image_size=(299, 299)):
 
     """
+    Image dataset prep function
+
+    """
+    #print("00000000",type(image_content))
     try:
         image = keras.preprocessing.image.load_img(io.BytesIO(image_content),
                                                    target_size = image_size)

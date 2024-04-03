@@ -1,3 +1,9 @@
+    # url = "http://localhost:8000/feedback"
+    # payload = {"image_path": image_path,
+    #                  "classification_decision": result}
+    # response = requests.post(url, json=payload)
+    # feedback = json.loads(response.content.decode('utf-8'))
+    # operator_feedback = feedback["feedback"]
 """
 This script contains functions for making inferences on images using
 a pre-trained model for NSFW (Not Safe For Work) content detection.
@@ -21,15 +27,26 @@ Functions:
 from datetime import datetime
 from fastapi import File, Form, UploadFile
 from fastapi.responses import JSONResponse
+import json
 import requests
 from nsfw_detector import predict
 from ml_data_utils import load_image_from_bytes, load_image_from_url, download_file
 import traceback
+import requests
+import yaml
 
-IMAGE_DIM = 299
+def load_constants(file_path):
+    with open(file_path, 'r') as file:
+        constants = yaml.safe_load(file)
+    return constants
+constants = load_constants('constants.yaml')
+
+#NUMBER_OF_MISCLASSIFICATIONS = 0
+IMAGE_DIM = constants['IMAGE_DIM']
 # Load the model when the application starts
-MODEL_PATH = 'inception_v3.h5'
+MODEL_PATH = constants['MODEL_PATH']
 model = predict.load_model(MODEL_PATH)
+
 
 def decision_function(result, image_path):
     """
@@ -42,6 +59,7 @@ def decision_function(result, image_path):
     Returns:
         JSONResponse: The JSON response containing the decision.
     """
+    #global NUMBER_OF_MISCLASSIFICATIONS
     try:
         nsfw_threshold = 0.95
         nsfw_categories = ["snail", "slug"]
@@ -49,21 +67,15 @@ def decision_function(result, image_path):
         for category, prob in max_probs:
             # checking for NSFW image presence
             if category in nsfw_categories and prob > nsfw_threshold:
-                # collect analytics for moderation model upgrade
-                with open('BANNED_IMAGES.txt', 'a', encoding='utf-8') as f:
-                    f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
                 data = {"decision": True, "detailed_info": max_probs}
-                return JSONResponse(content={"status": True,
-                                             "message": "СКАЙНЕТ РАБОТАЕТ",
-                                             "code": "SS-10000", "data": data})
-            # if image category not in the nsfw list
-            # collect analytics for moderation model upgrade
-            with open('NORM_IMAGES.txt', 'a', encoding='utf-8') as f:
-                f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
+            else:
                 data = {"decision": False, "detailed_info": max_probs}
-                return JSONResponse(content={"status": False,
-                                             "message": "СКАЙНЕТ РАБОТАЕТ",
-                                             "code": "SS-10000", "data": data})
+
+            return JSONResponse(content={"status": data["decision"],
+                                        "message": "СКАЙНЕТ РАБОТАЕТ",
+                                        "code": "SS-10000", "data": data,
+                                        "image_path": image_path})
+
     except Exception as e:
         traceback.print_exc()  # Print the traceback for debugging
         return JSONResponse(content={"Message": str(e)})
@@ -96,3 +108,4 @@ def make_inference(file: UploadFile = File(None),
                                                              "message": "ERROR",
                                                              "code": "SS-10000",
                                                              "data": str(e)})
+#СКАЙНЕТ РАБОТАЕТ
