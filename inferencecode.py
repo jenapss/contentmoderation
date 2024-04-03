@@ -49,6 +49,8 @@ def decision_function(result, image_path):
         for category, prob in max_probs:
             # checking for NSFW image presence
             if category in nsfw_categories and prob > nsfw_threshold:
+                # send image for feedback
+
                 # collect analytics for moderation model upgrade
                 with open('BANNED_IMAGES.txt', 'a', encoding='utf-8') as f:
                     f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
