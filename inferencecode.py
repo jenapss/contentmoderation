@@ -31,6 +31,44 @@ IMAGE_DIM = 299
 MODEL_PATH = 'inception_v3.h5'
 model = predict.load_model(MODEL_PATH)
 
+def log_result(result, image_path, norm_or_banned):
+    """
+    Logs the result of image classification.
+
+    Args:
+        result: The result of the image classification.
+        image_path (str): The path of the image.
+        norm_or_banned (str): The file to log the result in.
+    """
+    url = "http://localhost:8000/feedback"
+    payload = {"decision": result, "image_path": image_path}
+    response = requests.post(url, data=payload)
+
+    if norm_or_banned == 'NORM_IMAGES.txt':
+        data = {"decision": False, "detailed_info": result}
+        status = False
+        if response == 1:
+            with open(norm_or_banned, 'a', encoding='utf-8') as f:
+                f.write(f"\n{image_path} ---> {result} TIME: {datetime.now()}")
+        else:
+            with open('BANNED_IMAGES.txt', 'a', encoding='utf-8') as f:
+                f.write(f"\n{image_path} ---> {result} TIME: {datetime.now()}")
+    elif norm_or_banned == 'BANNED_IMAGES.txt':
+        data = {"decision": True, "detailed_info": result}
+        status = True
+        if response == 1:
+            with open(norm_or_banned, 'a', encoding='utf-8') as f:
+                f.write(f"\n{image_path} ---> {result} TIME: {datetime.now()}")
+        else:
+            with open('NORM_IMAGES.txt', 'a', encoding='utf-8') as f:
+                f.write(f"\n{image_path} ---> {result} TIME: {datetime.now()}")
+    else:
+        data = {"decision": None, "detailed_info": result}
+        status = None
+    return JSONResponse(content={"status": status,
+                                             "message": "СКАЙНЕТ РАБОТАЕТ",
+                                             "code": "SS-10000", "data": data})
+
 def decision_function(result, image_path):
     """
     Analyzes the result of image classification and returns the decision.
@@ -49,23 +87,15 @@ def decision_function(result, image_path):
         for category, prob in max_probs:
             # checking for NSFW image presence
             if category in nsfw_categories and prob > nsfw_threshold:
-                # send image for feedback
-
                 # collect analytics for moderation model upgrade
-                with open('BANNED_IMAGES.txt', 'a', encoding='utf-8') as f:
-                    f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
-                data = {"decision": True, "detailed_info": max_probs}
-                return JSONResponse(content={"status": True,
-                                             "message": "СКАЙНЕТ РАБОТАЕТ",
-                                             "code": "SS-10000", "data": data})
+                decision_data = log_result(max_probs, image_path, norm_or_banned)
+
             # if image category not in the nsfw list
             # collect analytics for moderation model upgrade
-            with open('NORM_IMAGES.txt', 'a', encoding='utf-8') as f:
-                f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
-                data = {"decision": False, "detailed_info": max_probs}
-                return JSONResponse(content={"status": False,
-                                             "message": "СКАЙНЕТ РАБОТАЕТ",
-                                             "code": "SS-10000", "data": data})
+            else:
+                decision_data = log_result(max_probs, image_path)
+            return decision_data
+
     except Exception as e:
         traceback.print_exc()  # Print the traceback for debugging
         return JSONResponse(content={"Message": str(e)})
