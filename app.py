@@ -28,13 +28,14 @@ Example Usage:
    GET request to http://localhost:8000/health.
 """
 from fastapi import FastAPI, File, Form, UploadFile
-from inferencecode import make_inference, log_result
+from inferencecode import make_inference
 from ml_data_utils import norm_banned_image_fetch
+from fastapi.responses import JSONResponse
 app = FastAPI()
 
 @app.post("/classify")
 async def classify_image(image_path: str = Form(None),
-                                        file: UploadFile = File(None)):
+                         file: UploadFile = File(None)):
     """
     Classify images provided via URL, file upload, or file path.
 
@@ -46,24 +47,30 @@ async def classify_image(image_path: str = Form(None),
     Returns:
         JSONResponse: JSON response containing the classification results.
     """
-    inference = make_inference(file = file, image_path = image_path)
-   # feedback = get_feedback(inference)
+    inference = make_inference(file=file, image_path=image_path)
     return inference
 
 @app.post("/feedback")
 
-async def get_feedback(decision, image_path):
-    print("")
-    print("Please Provide Feedback for the Image and according clasification:")
-    print(f"DECISION: {decision}")
-    print(f"IMAGE PATH: {image_path}")
-    print("0: Classification is INCORRECT")
-    print("1: Classification is CORRECT")
-    feedback = int(input("Enter Feedback: "))
-    if feedback not in [0, 1]:
-        print("Invalid Feedback. Please enter 0 or 1.")
-        feedback = int(input("Enter Feedback: "))
-    return feedback
+async def request_feedback(image_path: str, classification_decision: str):
+   #feedback = 1 # here we can add some logic to get feedback from the user
+    feedback = 1 # here we can add some logic to get feedback from the user
+
+    return {
+                "image_path": image_path,
+                "classification_decision": classification_decision,
+                "feedback": '0'
+                }
+    #return await feedback_decision(image_path, classification_decision)
+
+# async def feedback_decision(image_path, classification_decision):
+#     feedback = 1 # here we can add some logic to get feedback from the user
+
+#     return {
+#                 "image_path": image_path,
+#                 "classification_decision": classification_decision,
+#                 "feedback": feedback
+#                 }
 
 @app.post("/fetchimages")
 

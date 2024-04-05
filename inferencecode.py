@@ -1,3 +1,9 @@
+    # url = "http://localhost:8000/feedback"
+    # payload = {"image_path": image_path,
+    #                  "classification_decision": result}
+    # response = requests.post(url, json=payload)
+    # feedback = json.loads(response.content.decode('utf-8'))
+    # operator_feedback = feedback["feedback"]
 """
 This script contains functions for making inferences on images using
 a pre-trained model for NSFW (Not Safe For Work) content detection.
@@ -25,50 +31,13 @@ import requests
 from nsfw_detector import predict
 from ml_data_utils import load_image_from_bytes, load_image_from_url, download_file
 import traceback
-
+import requests
 IMAGE_DIM = 299
 # Load the model when the application starts
 MODEL_PATH = 'inception_v3.h5'
 model = predict.load_model(MODEL_PATH)
 
-def log_result(result, image_path, norm_or_banned):
-    """
-    Logs the result of image classification.
-
-    Args:
-        result: The result of the image classification.
-        image_path (str): The path of the image.
-        norm_or_banned (str): The file to log the result in.
-    """
-    url = "http://localhost:8000/feedback"
-    payload = {"decision": result, "image_path": image_path}
-    response = requests.post(url, data=payload)
-
-    if norm_or_banned == 'NORM_IMAGES.txt':
-        data = {"decision": False, "detailed_info": result}
-        status = False
-        if response == 1:
-            with open(norm_or_banned, 'a', encoding='utf-8') as f:
-                f.write(f"\n{image_path} ---> {result} TIME: {datetime.now()}")
-        else:
-            with open('BANNED_IMAGES.txt', 'a', encoding='utf-8') as f:
-                f.write(f"\n{image_path} ---> {result} TIME: {datetime.now()}")
-    elif norm_or_banned == 'BANNED_IMAGES.txt':
-        data = {"decision": True, "detailed_info": result}
-        status = True
-        if response == 1:
-            with open(norm_or_banned, 'a', encoding='utf-8') as f:
-                f.write(f"\n{image_path} ---> {result} TIME: {datetime.now()}")
-        else:
-            with open('NORM_IMAGES.txt', 'a', encoding='utf-8') as f:
-                f.write(f"\n{image_path} ---> {result} TIME: {datetime.now()}")
-    else:
-        data = {"decision": None, "detailed_info": result}
-        status = None
-    return JSONResponse(content={"status": status,
-                                             "message": "СКАЙНЕТ РАБОТАЕТ",
-                                             "code": "SS-10000", "data": data})
-
+# feedback = 1
 def decision_function(result, image_path):
     """
     Analyzes the result of image classification and returns the decision.
@@ -80,7 +49,17 @@ def decision_function(result, image_path):
     Returns:
         JSONResponse: The JSON response containing the decision.
     """
+
     try:
+        url = "http://localhost:8000/feedback"
+        params = {
+        "image_path": "/path/to/image.jpg",
+        "classification_decision": "NSFW"
+        }
+        operator_response = requests.post(url, params=params) 
+        response = operator_response.json()
+        #response = {"image_path":"/path/to/image.jpg","classification_decision":"NSFW","feedback":0}
+        feedback = response['feedback']
         nsfw_threshold = 0.95
         nsfw_categories = ["snail", "slug"]
         max_probs = sorted(result[0].items(), key=lambda x: x[1], reverse=True)[:2]
@@ -88,13 +67,37 @@ def decision_function(result, image_path):
             # checking for NSFW image presence
             if category in nsfw_categories and prob > nsfw_threshold:
                 # collect analytics for moderation model upgrade
-                decision_data = log_result(max_probs, image_path, norm_or_banned)
-
+                if feedback == '1':
+                    with open('BANNED_IMAGES.txt', 'a', encoding='utf-8') as f:
+                        f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
+                    data = {"decision": True, "detailed_info": max_probs}
+                    return JSONResponse(content={"status": True,
+                                                "message": "СКАЙНЕТ РАБОТАЕТ",
+                                                "code": "SS-10000", "data": data, "feedback": feedback})
+                else:
+                    with open('NORM_IMAGES.txt', 'a', encoding='utf-8') as f:
+                        f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
+                    data = {"decision": False, "detailed_info": max_probs}
+                    return JSONResponse(content={"status": False,
+                                                "message": "СКАЙНЕТ РАБОТАЕТ",
+                                                "code": "SS-10000", "data": data,  "feedback": feedback})
             # if image category not in the nsfw list
             # collect analytics for moderation model upgrade
             else:
-                decision_data = log_result(max_probs, image_path)
-            return decision_data
+                if feedback == '1':
+                    with open('NORM_IMAGES.txt', 'a', encoding='utf-8') as f:
+                        f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
+                        data = {"decision": False, "detailed_info": max_probs}
+                        return JSONResponse(content={"status": False,
+                                                    "message": "СКАЙНЕТ РАБОТАЕТ",
+                                                    "code": "SS-10000", "data": data,  "feedback": feedback})
+                else:
+                    with open('BANNED_IMAGES.txt', 'a', encoding='utf-8') as f:
+                        f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
+                        data = {"decision": True, "detailed_info": max_probs}
+                        return JSONResponse(content={"status": True,
+                                                    "message": "СКАЙНЕТ РАБОТАЕТ",
+                                                    "code": "SS-10000", "data": data, "feedback": feedback})
 
     except Exception as e:
         traceback.print_exc()  # Print the traceback for debugging

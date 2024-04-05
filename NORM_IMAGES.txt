@@ -1,1 +1,17 @@
 
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 13:49:38.394406
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 13:52:22.380585
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 13:52:27.976658
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 13:52:40.352573
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 13:55:48.665136
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 14:02:55.273429
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 14:05:01.782919
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 14:08:59.413024
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 14:10:56.426617
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 14:29:25.068342
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-04 15:57:12.720957
+C:\Users\sulta\Downloads\snail.jpg ---> [('snail', 0.9970670342445374), ('slug', 0.00046261207899078727)] TIME: 2024-04-04 15:59:24.301739
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-05 12:15:39.266914
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-05 13:25:08.228217
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-05 13:26:00.805718
+C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-05 13:30:46.572689
