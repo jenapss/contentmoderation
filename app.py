@@ -50,27 +50,18 @@ async def classify_image(image_path: str = Form(None),
     inference = make_inference(file=file, image_path=image_path)
     return inference
 
-@app.post("/feedback")
 
-async def request_feedback(image_path: str, classification_decision: str):
-   #feedback = 1 # here we can add some logic to get feedback from the user
-    feedback = 1 # here we can add some logic to get feedback from the user
+@app.post("/feedback")
+async def request_feedback(image_path: str, classification_decision: str, verdict: dict):
+
+    feedback = verdict['feedback']
 
     return {
-                "image_path": image_path,
-                "classification_decision": classification_decision,
-                "feedback": '0'
-                }
-    #return await feedback_decision(image_path, classification_decision)
-
-# async def feedback_decision(image_path, classification_decision):
-#     feedback = 1 # here we can add some logic to get feedback from the user
-
-#     return {
-#                 "image_path": image_path,
-#                 "classification_decision": classification_decision,
-#                 "feedback": feedback
-#                 }
+             "status": True,
+            "message": "Feedback Received!",
+            "code": "SS-10000",
+            "data": "СКАЙНЕТ РАБОТАЕТ"
+            }
 
 @app.post("/fetchimages")
 

@@ -27,17 +27,57 @@ Functions:
 from datetime import datetime
 from fastapi import File, Form, UploadFile
 from fastapi.responses import JSONResponse
+import json
 import requests
 from nsfw_detector import predict
 from ml_data_utils import load_image_from_bytes, load_image_from_url, download_file
 import traceback
 import requests
-IMAGE_DIM = 299
+import yaml
+
+def load_constants(file_path):
+    with open(file_path, 'r') as file:
+        constants = yaml.safe_load(file)
+    return constants
+constants = load_constants('constants.yaml')
+
+#NUMBER_OF_MISCLASSIFICATIONS = 0
+IMAGE_DIM = constants['IMAGE_DIM']
 # Load the model when the application starts
-MODEL_PATH = 'inception_v3.h5'
+MODEL_PATH = constants['MODEL_PATH']
 model = predict.load_model(MODEL_PATH)
 
-# feedback = 1
+def log_results(image_path, classification_decision, feedback):
+    """
+    Logs the feedback for the image classification.
+
+    Args:
+        image_path (str): The path of the image.
+        classification_decision (str): The classification decision (NSFW or SFW).
+        feedback (int): The feedback provided by the operator (0 or 1).
+
+    Returns:
+        None
+    """
+    data = json.loads(classification_decision)
+    decision = data["data"]["decision"]
+    if decision == True:
+        if feedback == 1:
+            filename = 'BANNED_IMAGES.txt'
+        else:
+            filename = 'NORM_IMAGES.txt'
+            #NUMBER_OF_MISCLASSIFICATIONS += 1
+        with open(filename, 'a', encoding='utf-8') as f:
+            f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
+    else:
+        if feedback == 1:
+            filename = 'NORM_IMAGES.txt'
+        else:
+            filename = 'BANNED_IMAGES.txt'
+            #NUMBER_OF_MISCLASSIFICATIONS += 1
+            with open(filename, 'a', encoding='utf-8') as f:
+                f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
+
 def decision_function(result, image_path):
     """
     Analyzes the result of image classification and returns the decision.
@@ -49,16 +89,9 @@ def decision_function(result, image_path):
     Returns:
         JSONResponse: The JSON response containing the decision.
     """
-
+    #global NUMBER_OF_MISCLASSIFICATIONS
     try:
-        url = "http://localhost:8000/feedback"
-        params = {
-        "image_path": "/path/to/image.jpg",
-        "classification_decision": "NSFW"
-        }
-        operator_response = requests.post(url, params=params) 
-        response = operator_response.json()
-        #response = {"image_path":"/path/to/image.jpg","classification_decision":"NSFW","feedback":0}
+        response = {"image_path":"/path/to/image.jpg","classification_decision":"NSFW","feedback": 0}
         feedback = response['feedback']
         nsfw_threshold = 0.95
         nsfw_categories = ["snail", "slug"]
@@ -66,38 +99,13 @@ def decision_function(result, image_path):
         for category, prob in max_probs:
             # checking for NSFW image presence
             if category in nsfw_categories and prob > nsfw_threshold:
-                # collect analytics for moderation model upgrade
-                if feedback == '1':
-                    with open('BANNED_IMAGES.txt', 'a', encoding='utf-8') as f:
-                        f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
-                    data = {"decision": True, "detailed_info": max_probs}
-                    return JSONResponse(content={"status": True,
-                                                "message": "СКАЙНЕТ РАБОТАЕТ",
-                                                "code": "SS-10000", "data": data, "feedback": feedback})
-                else:
-                    with open('NORM_IMAGES.txt', 'a', encoding='utf-8') as f:
-                        f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
-                    data = {"decision": False, "detailed_info": max_probs}
-                    return JSONResponse(content={"status": False,
-                                                "message": "СКАЙНЕТ РАБОТАЕТ",
-                                                "code": "SS-10000", "data": data,  "feedback": feedback})
-            # if image category not in the nsfw list
-            # collect analytics for moderation model upgrade
+                data = {"decision": True, "detailed_info": max_probs}
             else:
-                if feedback == '1':
-                    with open('NORM_IMAGES.txt', 'a', encoding='utf-8') as f:
-                        f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
-                        data = {"decision": False, "detailed_info": max_probs}
-                        return JSONResponse(content={"status": False,
-                                                    "message": "СКАЙНЕТ РАБОТАЕТ",
-                                                    "code": "SS-10000", "data": data,  "feedback": feedback})
-                else:
-                    with open('BANNED_IMAGES.txt', 'a', encoding='utf-8') as f:
-                        f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
-                        data = {"decision": True, "detailed_info": max_probs}
-                        return JSONResponse(content={"status": True,
-                                                    "message": "СКАЙНЕТ РАБОТАЕТ",
-                                                    "code": "SS-10000", "data": data, "feedback": feedback})
+                data = {"decision": False, "detailed_info": max_probs}
+
+            return JSONResponse(content={"status": data["decision"],
+                                        "message": "СКАЙНЕТ РАБОТАЕТ",
+                                        "code": "SS-10000", "data": data, })
 
     except Exception as e:
         traceback.print_exc()  # Print the traceback for debugging
@@ -131,3 +139,4 @@ def make_inference(file: UploadFile = File(None),
                                                              "message": "ERROR",
                                                              "code": "SS-10000",
                                                              "data": str(e)})
+#СКАЙНЕТ РАБОТАЕТ

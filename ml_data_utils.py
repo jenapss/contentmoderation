@@ -34,14 +34,14 @@ from fastapi import File, Form, UploadFile
 import logging
 from pathlib import Path
 import tempfile
-DATASET_DEST_PATH = "./img_dataset"
-SAVE_PATH = ""
 import logging
 import requests
-
+from inferencecode import constants
 logger = logging.getLogger(__name__)
 
-UPLOAD_DIR = "C:\\Users\\sulta\\Downloads\\contentmoderation\\UPLOADED_IMAGES"
+UPLOAD_DIR = constants['UPLOAD_DIR']
+DATASET_DEST_PATH = constants['DATASET_DEST_PATH']
+SAVE_PATH = constants['SAVE_PATH']
 
 def load_image_from_url(url):
     """
@@ -102,11 +102,11 @@ def download_file(file: UploadFile = File(None),
         HTTPError: If the HTTP request to the URL fails.
     """
     logger = logging.getLogger(__name__)
-    downloaded_path = ""
-    if file is not None:
+
+    if file:
         uploaded_image = file.file.read()
         downloaded_path = save_uploaded_file(file)
-    elif image_path is not None:
+    elif image_path:
         logger.info("IMAGE PATH: %s", image_path)  # Add logging here
         with open(image_path, 'rb') as f:
             uploaded_image = f.read()
