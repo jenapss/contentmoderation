@@ -61,6 +61,7 @@ def log_results(image_path, classification_decision, feedback):
     """
     data = json.loads(classification_decision)
     decision = data["data"]["decision"]
+    detailed_info = data["data"]["detailed_info"]
     if decision == True:
         if feedback == 1:
             filename = 'BANNED_IMAGES.txt'
@@ -68,7 +69,7 @@ def log_results(image_path, classification_decision, feedback):
             filename = 'NORM_IMAGES.txt'
             #NUMBER_OF_MISCLASSIFICATIONS += 1
         with open(filename, 'a', encoding='utf-8') as f:
-            f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
+            f.write(f"\n{image_path} ---> {detailed_info} TIME: {datetime.now()}")
     else:
         if feedback == 1:
             filename = 'NORM_IMAGES.txt'
@@ -76,7 +77,7 @@ def log_results(image_path, classification_decision, feedback):
             filename = 'BANNED_IMAGES.txt'
             #NUMBER_OF_MISCLASSIFICATIONS += 1
             with open(filename, 'a', encoding='utf-8') as f:
-                f.write(f"\n{image_path} ---> {max_probs} TIME: {datetime.now()}")
+                f.write(f"\n{image_path} ---> {detailed_info} TIME: {datetime.now()}")
 
 def decision_function(result, image_path):
     """

@@ -28,7 +28,7 @@ Example Usage:
    GET request to http://localhost:8000/health.
 """
 from fastapi import FastAPI, File, Form, UploadFile
-from inferencecode import make_inference
+from inferencecode import make_inference, log_results
 from ml_data_utils import norm_banned_image_fetch
 from fastapi.responses import JSONResponse
 app = FastAPI()
@@ -52,7 +52,7 @@ async def classify_image(image_path: str = Form(None),
 
 
 @app.post("/feedback")
-async def request_feedback(image_path: str, classification_decision: str, verdict: dict):
+async def request_feedback(image_path: str, classification_decision: dict, verdict: dict):
 
     feedback = verdict['feedback']
 
@@ -62,9 +62,6 @@ async def request_feedback(image_path: str, classification_decision: str, verdic
             "code": "SS-10000",
             "data": "СКАЙНЕТ РАБОТАЕТ"
             }
-
-@app.post("/fetchimages")
-
 async def fetch_images(request_data: dict):
     normal_images_path = request_data.get("normal_images_path", None)
     banned_images_path = request_data.get("banned_images_path", None)
@@ -74,6 +71,7 @@ async def fetch_images(request_data: dict):
     #     return {"error": "Missing required parameters"}
 
     return norm_banned_image_fetch(normal_images_path, banned_images_path, batch_size)
+
 
 @app.get("/health")
 async def health_check():
