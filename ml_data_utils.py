@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
 UPLOAD_DIR = constants['UPLOAD_DIR']
 DATASET_DEST_PATH = constants['DATASET_DEST_PATH']
 SAVE_PATH = constants['SAVE_PATH']
+UPLOADED_IMAGE_PATHS = constants['UPLOADED_IMAGE_PATHS']
 
 def load_image_from_url(url):
     """
@@ -61,32 +62,6 @@ def load_image_from_url(url):
         logger.exception(f"Error fetching image from URL in load_image_from_url: {e}")
         return None
 
-def save_uploaded_file(upload_file: UploadFile) -> str:
-    """
-    Save the uploaded file to the specified directory.
-    Returns the path where the file is saved.
-    """
-    # Create the directory if it doesn't exist
-    Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
-
-    # Construct the path to save the file
-    file_path = os.path.join(UPLOAD_DIR, upload_file.filename)
-
-    try:
-        # Ensure the file pointer is at the beginning
-        upload_file.file.seek(0)
-
-        # Write the file contents to the specified path
-        with open(file_path, "wb") as buffer:
-            buffer.write(upload_file.file.read())
-    except Exception as e:
-        # Handle any errors that occur during file saving
-        print(f"Error saving file: {e}")
-        return None
-
-    return file_path
-
-
 def download_file(file: UploadFile = File(None),
                             image_path: str = Form(None)):
     """
@@ -105,7 +80,8 @@ def download_file(file: UploadFile = File(None),
 
     if file:
         uploaded_image = file.file.read()
-        downloaded_path = save_uploaded_file(file)
+        image_name = file.filename
+        downloaded_path = os.path.join(UPLOADED_IMAGE_PATHS, image_name)
     elif image_path:
         logger.info("IMAGE PATH: %s", image_path)  # Add logging here
         with open(image_path, 'rb') as f:

@@ -50,12 +50,11 @@ async def classify_image(image_path: str = Form(None),
     inference = make_inference(file=file, image_path=image_path)
     return inference
 
-
 @app.post("/feedback")
 async def request_feedback(image_path: str, classification_decision: dict, verdict: dict):
 
     feedback = verdict['feedback']
-
+    log_results(image_path, classification_decision, feedback)
     return {
              "status": True,
             "message": "Feedback Received!",
