@@ -36,13 +36,54 @@ from pathlib import Path
 import tempfile
 import logging
 import requests
-from inferencecode import constants
+import json
+from datetime import datetime
 logger = logging.getLogger(__name__)
+import yaml
+def load_constants(file_path):
+    with open(file_path, 'r') as file:
+        constants = yaml.safe_load(file)
+    return constants
+constants = load_constants('constants.yaml')
 
-UPLOAD_DIR = constants['UPLOAD_DIR']
+#UPLOAD_DIR = constants['UPLOAD_DIR']
 DATASET_DEST_PATH = constants['DATASET_DEST_PATH']
-SAVE_PATH = constants['SAVE_PATH']
 UPLOADED_IMAGE_PATHS = constants['UPLOADED_IMAGE_PATHS']
+
+from datetime import datetime
+import json
+
+def log_results(image_path, classification_decision, verdict):
+    """
+    Logs the feedback for the image classification.
+    Calledd from /feedback endpoint with such command:
+    curl -X POST -H "Content-Type: application/json" -d "{\"status\": true, \"data\": {\"detailed_info\": [[\"leopard\", 0.9076730608940125]]}}" \
+    "http://localhost:8000/feedback?image_path=/path/to/image.jpg&verdict=1"
+
+    Args:
+        image_path (str): The path of the image.
+        classification_decision (dict): The classification decision containing status and data.
+        verdict (int): The verdict provided (0 or 1).
+
+    Returns:
+        None
+    """
+    status = classification_decision["status"]
+    detailed_info = classification_decision["data"]["detailed_info"]
+
+    if status == 'true':
+        if verdict == 1:
+            filename = 'BANNED_IMAGES.txt'
+        else:
+            filename = 'NORM_IMAGES.txt'
+    else:
+        if verdict == 1:
+            filename = 'NORM_IMAGES.txt'
+        else:
+            filename = 'BANNED_IMAGES.txt'
+
+    with open(filename, 'a', encoding='utf-8') as f:
+        f.write(f"\n{image_path} ---> {detailed_info} TIME: {datetime.now()}")
 
 def load_image_from_url(url):
     """

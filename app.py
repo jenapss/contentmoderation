@@ -28,8 +28,8 @@ Example Usage:
    GET request to http://localhost:8000/health.
 """
 from fastapi import FastAPI, File, Form, UploadFile
-from inferencecode import make_inference, log_results
-from ml_data_utils import norm_banned_image_fetch
+from inferencecode import make_inference
+from ml_data_utils import norm_banned_image_fetch, log_results
 from fastapi.responses import JSONResponse
 app = FastAPI()
 
@@ -51,10 +51,14 @@ async def classify_image(image_path: str = Form(None),
     return inference
 
 @app.post("/feedback")
-async def request_feedback(image_path: str, classification_decision: dict, verdict: dict):
-
-    feedback = verdict['feedback']
-    log_results(image_path, classification_decision, feedback)
+async def request_feedback(image_path: str, classification_decision: dict, verdict: int):
+    """
+    Receive feedback on the classification decision.
+    Works with such command line prompt: 
+    curl -X POST -H "Content-Type: application/json" -d "{\"status\": true, \"data\": {\"detailed_info\": [[\"leopard\", 0.9076730608940125]]}}" 
+    "http://localhost:8000/feedback?image_path=/path/to/image.jpg&verdict=1"
+    """
+    log_results(image_path, classification_decision, verdict)
     return {
              "status": True,
             "message": "Feedback Received!",

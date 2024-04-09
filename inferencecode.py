@@ -47,37 +47,6 @@ IMAGE_DIM = constants['IMAGE_DIM']
 MODEL_PATH = constants['MODEL_PATH']
 model = predict.load_model(MODEL_PATH)
 
-def log_results(image_path, classification_decision, feedback):
-    """
-    Logs the feedback for the image classification.
-
-    Args:
-        image_path (str): The path of the image.
-        classification_decision (str): The classification decision (NSFW or SFW).
-        feedback (int): The feedback provided by the operator (0 or 1).
-
-    Returns:
-        None
-    """
-    data = json.loads(classification_decision)
-    decision = data["data"]["decision"]
-    detailed_info = data["data"]["detailed_info"]
-    if decision == True:
-        if feedback == 1:
-            filename = 'BANNED_IMAGES.txt'
-        else:
-            filename = 'NORM_IMAGES.txt'
-            #NUMBER_OF_MISCLASSIFICATIONS += 1
-        with open(filename, 'a', encoding='utf-8') as f:
-            f.write(f"\n{image_path} ---> {detailed_info} TIME: {datetime.now()}")
-    else:
-        if feedback == 1:
-            filename = 'NORM_IMAGES.txt'
-        else:
-            filename = 'BANNED_IMAGES.txt'
-            #NUMBER_OF_MISCLASSIFICATIONS += 1
-            with open(filename, 'a', encoding='utf-8') as f:
-                f.write(f"\n{image_path} ---> {detailed_info} TIME: {datetime.now()}")
 
 def decision_function(result, image_path):
     """
@@ -92,8 +61,6 @@ def decision_function(result, image_path):
     """
     #global NUMBER_OF_MISCLASSIFICATIONS
     try:
-        response = {"image_path":"/path/to/image.jpg","classification_decision":"NSFW","feedback": 0}
-        feedback = response['feedback']
         nsfw_threshold = 0.95
         nsfw_categories = ["snail", "slug"]
         max_probs = sorted(result[0].items(), key=lambda x: x[1], reverse=True)[:2]
@@ -106,7 +73,8 @@ def decision_function(result, image_path):
 
             return JSONResponse(content={"status": data["decision"],
                                         "message": "СКАЙНЕТ РАБОТАЕТ",
-                                        "code": "SS-10000", "data": data, })
+                                        "code": "SS-10000", "data": data,
+                                        "image_path": image_path})
 
     except Exception as e:
         traceback.print_exc()  # Print the traceback for debugging

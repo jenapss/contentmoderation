@@ -23,3 +23,4 @@ C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME
 C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-05 14:42:37.668347
 C:\Users\sulta\Downloads\leopard.jpg ---> [('leopard', 0.9076730608940125)] TIME: 2024-04-05 18:20:58.159835
 C:\Users\sulta\Downloads\snail.jpg ---> [('snail', 0.9970670342445374), ('slug', 0.00046261207899078727)] TIME: 2024-04-05 18:22:09.368321
+/path/to/image.jpg ---> [['leopard', 0.9076730608940125]] TIME: 2024-04-09 15:41:25.991791

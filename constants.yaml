@@ -1,7 +1,4 @@
-# Constants.yaml
-
 IMAGE_DIM: 299 # Image dimension
 MODEL_PATH: "inception_v3.h5"
 DATASET_DEST_PATH: "./img_dataset"
-UPLOADED_IMAGE_PATHS: "C:\\Users\sulta\\Downloads\\"
-SAVE_PATH:
+UPLOADED_IMAGE_PATHS: "C:\\Users\\sulta\\Downloads\\"
