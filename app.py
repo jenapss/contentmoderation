@@ -29,10 +29,12 @@ Example Usage:
 """
 from fastapi import FastAPI, File, Form, UploadFile
 from inferencecode import make_inference
-from ml_data_utils import norm_banned_image_fetch, log_results
+from ml_data_utils import norm_banned_image_fetch, log_results,  load_constants
 from fastapi.responses import JSONResponse
-app = FastAPI()
 
+app = FastAPI()
+constants = load_constants('constants.yaml')
+misclassification = constants['MISCLASSIFICATION']
 @app.post("/classify")
 async def classify_image(image_path: str = Form(None),
                          file: UploadFile = File(None)):
@@ -59,6 +61,17 @@ async def request_feedback(image_path: str, classification_decision: dict, verdi
     "http://localhost:8000/feedback?image_path=/path/to/image.jpg&verdict=1"
     """
     log_results(image_path, classification_decision, verdict)
+    global misclassification
+    if verdict == 0:
+        misclassification+=1
+    if misclassification >= 10:
+        trigger = await train_trigger()
+        return {
+             "status": True,
+            "message": trigger,
+            "code": "SS-10000",
+            "data": "СКАЙНЕТ РАБОТАЕТ"
+            }
     return {
              "status": True,
             "message": "Feedback Received!",
@@ -70,11 +83,9 @@ async def fetch_images(request_data: dict):
     banned_images_path = request_data.get("banned_images_path", None)
     batch_size = request_data.get("batch_size", 5)
 
-    # if not normal_images_path or not banned_images_path:
-    #     return {"error": "Missing required parameters"}
+async def train_trigger():
 
-    return norm_banned_image_fetch(normal_images_path, banned_images_path, batch_size)
-
+    return "Training started"
 
 @app.get("/health")
 async def health_check():
