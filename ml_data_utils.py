@@ -38,6 +38,8 @@ import logging
 import requests
 import json
 from datetime import datetime
+import json
+from datetime import datetime
 logger = logging.getLogger(__name__)
 import yaml
 
@@ -51,8 +53,7 @@ constants = load_constants('constants.yaml')
 DATASET_DEST_PATH = constants['DATASET_DEST_PATH']
 UPLOADED_IMAGE_PATHS = constants['UPLOADED_IMAGE_PATHS']
 
-from datetime import datetime
-import json
+
 
 def log_results(image_path, classification_decision, verdict):
     """

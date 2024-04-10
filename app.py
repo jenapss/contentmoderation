@@ -31,10 +31,21 @@ from fastapi import FastAPI, File, Form, UploadFile
 from inferencecode import make_inference
 from ml_data_utils import norm_banned_image_fetch, log_results,  load_constants
 from fastapi.responses import JSONResponse
+import yaml
 
 app = FastAPI()
 constants = load_constants('constants.yaml')
 misclassification = constants['MISCLASSIFICATION']
+
+def update_misclassification_count(count):
+    with open('constants.yaml', 'r') as yaml_file:
+        config = yaml.safe_load(yaml_file)
+
+    config['MISCLASSFICATION'] = count
+
+    with open('constants.yaml', 'w') as yaml_file:
+        yaml.dump(config, yaml_file)
+
 @app.post("/classify")
 async def classify_image(image_path: str = Form(None),
                          file: UploadFile = File(None)):
@@ -57,13 +68,13 @@ async def request_feedback(image_path: str, classification_decision: dict, verdi
     """
     Receive feedback on the classification decision.
     Works with such command line prompt: 
-    curl -X POST -H "Content-Type: application/json" -d "{\"status\": true, \"data\": {\"detailed_info\": [[\"leopard\", 0.9076730608940125]]}}" 
-    "http://localhost:8000/feedback?image_path=/path/to/image.jpg&verdict=1"
+    curl -X POST -H "Content-Type: application/json" -d "{\"status\": true, \"data\": {\"detailed_info\": [[\"leopard\", 0.9076730608940125]]}}" "http://localhost:8000/feedback?image_path=/path/to/image.jpg&verdict=1"
     """
     log_results(image_path, classification_decision, verdict)
     global misclassification
     if verdict == 0:
         misclassification+=1
+        update_misclassification_count(misclassification)
     if misclassification >= 10:
         trigger = await train_trigger()
         return {
@@ -82,6 +93,7 @@ async def fetch_images(request_data: dict):
     normal_images_path = request_data.get("normal_images_path", None)
     banned_images_path = request_data.get("banned_images_path", None)
     batch_size = request_data.get("batch_size", 5)
+    return norm_banned_image_fetch(normal_images_path, banned_images_path, batch_size)
 
 async def train_trigger():
 
