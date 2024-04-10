@@ -65,12 +65,13 @@ import yaml
 app = FastAPI()
 constants = load_constants('constants.yaml')
 misclassification = constants['MISCLASSIFICATION']
-
+returning = constants["RETURN_MESSAGES"]
+mini_counter = 0
 def update_misclassification_count(count):
-    with open('constants.yaml', 'r') as yaml_file:
+    with open('constants.yaml', 'r', encoding='utf8') as yaml_file:
         config = yaml.safe_load(yaml_file)
 
-    config['MISCLASSFICATION'] = count
+    config['MISCLASSIFICATION'] = count
 
     with open('constants.yaml', 'w') as yaml_file:
         yaml.dump(config, yaml_file)
@@ -89,8 +90,8 @@ async def classify_image(image_path: str = Form(None),
     Returns:
         JSONResponse: JSON response containing the classification results.
     """
-    inference = make_inference(file=file, image_path=image_path)
-    return inference
+
+    return make_inference(file=file, image_path=image_path)
 
 @app.post("/feedback")
 async def request_feedback(image_path: str, classification_decision: dict, verdict: int):
@@ -101,23 +102,24 @@ async def request_feedback(image_path: str, classification_decision: dict, verdi
     """
     log_results(image_path, classification_decision, verdict)
     global misclassification
+    global mini_counter
+    global returning
     if verdict == 0:
         misclassification+=1
-        update_misclassification_count(misclassification)
+        mini_counter+=1
+        if mini_counter == 10:
+            mini_counter = 0
+            update_misclassification_count(misclassification)
     if misclassification >= 10:
         trigger = await train_trigger()
-        return {
-             "status": True,
-            "message": trigger,
-            "code": "SS-10000",
-            "data": "СКАЙНЕТ РАБОТАЕТ"
-            }
-    return {
-             "status": True,
-            "message": "Feedback Received!",
-            "code": "SS-10000",
-            "data": "СКАЙНЕТ РАБОТАЕТ"
-            }
+        returning["status"] = True
+        returning["message"] = trigger
+        return returning
+
+    returning["status"] = True
+    returning["message"] = "Feedback Received!"
+    return returning
+
 async def fetch_images(request_data: dict):
     normal_images_path = request_data.get("normal_images_path", None)
     banned_images_path = request_data.get("banned_images_path", None)
@@ -137,9 +139,7 @@ async def health_check():
         JSONResponse: JSON response indicating the health status.
     """
     print("HERE")
-    return {
-            "status": True,
-            "message": "Good Job !!!",
-            "code": "SS-10000",
-            "data": "СКАЙНЕТ РАБОТАЕТ"
-            }
+    global returning
+    returning["status"] = True
+    returning["message"] = "Well Done !!!"
+    return returning

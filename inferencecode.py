@@ -30,7 +30,7 @@ from fastapi.responses import JSONResponse
 import json
 import requests
 from nsfw_detector import predict
-from ml_data_utils import load_image_from_bytes, load_image_from_url, download_file
+from ml_data_utils import load_images_from_bytes, load_image_from_url, download_file
 import traceback
 import requests
 import yaml
@@ -40,7 +40,7 @@ def load_constants(file_path):
         constants = yaml.safe_load(file)
     return constants
 constants = load_constants('constants.yaml')
-
+returning = constants["RETURN_MESSAGES"]
 #NUMBER_OF_MISCLASSIFICATIONS = 0
 IMAGE_DIM = constants['IMAGE_DIM']
 # Load the model when the application starts
@@ -100,12 +100,14 @@ def make_inference(file: UploadFile = File(None),
 
     try:
         downloaded_image, downloaded_path = download_file(file, image_path)
-        nd_image = load_image_from_bytes(downloaded_image)
+        nd_image = load_images_from_bytes(downloaded_image)
         result = predict.classify_nd(model, nd_image)
         return decision_function(result, downloaded_path)
     except Exception as e:
-        return JSONResponse(content={"status": False,
-                                                             "message": "ERROR",
-                                                             "code": "SS-10000",
-                                                             "data": str(e)})
+        global returning
+        returning["status"] = False
+        returning["message"] = "ERROR"
+        returning["code"] = "SS-10000"
+        returning["data"] = str(e)
+        return returning
 #СКАЙНЕТ РАБОТАЕТ

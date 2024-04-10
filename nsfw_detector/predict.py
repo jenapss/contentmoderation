@@ -116,7 +116,6 @@ def classify_nd(model, nd_images, predict_args={}):
     categories = ['snail', 'slug', 'tiger', 'tiger_cat', 'leopard']
     probs = []
     for single_preds in decoded_preds:
-    for single_preds in decoded_preds:
         single_probs = {}
         for label, description, probability in single_preds:
             # Map the description to your predefined categories

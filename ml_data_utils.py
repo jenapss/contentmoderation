@@ -64,7 +64,7 @@ logger = logging.getLogger(__name__)
 import yaml
 
 def load_constants(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='utf8') as file:
         constants = yaml.safe_load(file)
     return constants
 constants = load_constants('constants.yaml')
@@ -79,8 +79,7 @@ def log_results(image_path, classification_decision, verdict):
     """
     Logs the feedback for the image classification.
     Calledd from /feedback endpoint with such command:
-    curl -X POST -H "Content-Type: application/json" -d "{\"status\": true, \"data\": {\"detailed_info\": [[\"leopard\", 0.9076730608940125]]}}" \
-    "http://localhost:8000/feedback?image_path=/path/to/image.jpg&verdict=1"
+    curl -X POST -H "Content-Type: application/json" -d "{\"status\": true, \"data\": {\"detailed_info\": [[\"leopard\", 0.9076730608940125]]}}" \ "http://localhost:8000/feedback?image_path=/path/to/image.jpg&verdict=1"
 
     Args:
         image_path (str): The path of the image.
@@ -125,6 +124,7 @@ def load_image_from_url(url):
         logger.exception(f"Error fetching image from URL in load_image_from_url: {e}")
         return None
 
+
 def download_file(file: UploadFile = File(None),
                             image_path: str = Form(None)):
     """
@@ -156,7 +156,7 @@ def download_file(file: UploadFile = File(None),
     return uploaded_image, downloaded_path
 
 
-def image_prep_in_bytes(image_content: bytes, image_size=(299, 299)):
+def load_images_from_bytes(image_content: bytes, image_size=(299, 299)):
 
     """
     Image dataset prep function
@@ -337,8 +337,8 @@ def norm_banned_image_fetch(normal_images_path: str = None, banned_images_path: 
         banned_image_generator = image_generator(banned_image_paths, batch_size)
         banned_image_data.extend(next(banned_image_generator, []))
 
-    normal_image_data_keras = [load_image_from_bytes(image) for image in normal_image_data]
-    banned_image_data_keras = [load_image_from_bytes(image) for image in banned_image_data]
+    normal_image_data_keras = [load_images_from_bytes(image) for image in normal_image_data]
+    banned_image_data_keras = [load_images_from_bytes(image) for image in banned_image_data]
     normal_images = [image.tolist() for image in normal_image_data_keras]
     banned_images = [image.tolist() for image in banned_image_data_keras]
 
