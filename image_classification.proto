@@ -1,0 +1,31 @@
+    syntax = "proto3";
+
+    package imageclassification;
+
+    // The image classification service definition.
+    service ImageClassification {
+    // Sends an image for classification
+    rpc ClassifyImage (ImageRequest) returns (ClassificationResponse) {}
+
+    // Performs health check
+    rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse) {}
+    }
+
+    // The request message containing the image.
+    message ImageRequest {
+    string image_path = 1;
+    bytes image_file= 2;
+    }
+
+    // The response message containing the classification results.
+    message ClassificationResponse {
+    string result = 1;
+    }
+
+    // The request message for health check.
+    message HealthCheckRequest {}
+
+    // The response message for health check.
+    message HealthCheckResponse {
+    string status = 1;
+    }
