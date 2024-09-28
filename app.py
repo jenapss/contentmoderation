@@ -1,137 +1,145 @@
+"""
+File: app.py
+
+Description:
+This file contains a FastAPI application for image classification and health check endpoints.
+
+Endpoints:
+1. POST /classify:
+   - Description: Endpoint for classifying images provided via URL, file upload, or file path.
+   - Parameters:
+     - url (str, optional): URL of the image to classify.
+     - file (UploadFile, optional): Uploaded image file.
+     - image_path (str, optional): Local path of the image file.
+   - Returns:
+     - JSONResponse: JSON response containing the classification results.
+
+2. GET /health:
+   - Description: Endpoint for health check.
+   - Returns:
+     - JSONResponse: JSON response indicating the health status of the application.
+
+Example Usage:
+1. To classify an image:
+   POST request to http://localhost:8000/classify with form
+   data containing: 'url', 'file', or 'image_path'.
+
+2. To perform a health check:
+   GET request to http://localhost:8000/health.
+"""
+"""
+File: app.py
+
+Description:
+This file contains a FastAPI application for image classification and health check endpoints.
+
+Endpoints:
+1. POST /classify:
+   - Description: Endpoint for classifying images provided via URL, file upload, or file path.
+   - Parameters:
+     - url (str, optional): URL of the image to classify.
+     - file (UploadFile, optional): Uploaded image file.
+     - image_path (str, optional): Local path of the image file.
+   - Returns:
+     - JSONResponse: JSON response containing the classification results.
+
+2. GET /health:
+   - Description: Endpoint for health check.
+   - Returns:
+     - JSONResponse: JSON response indicating the health status of the application.
+
+Example Usage:
+1. To classify an image:
+   POST request to http://localhost:8000/classify with form
+   data containing: 'url', 'file', or 'image_path'.
+
+2. To perform a health check:
+   GET request to http://localhost:8000/health.
+"""
 from fastapi import FastAPI, File, Form, UploadFile
+from inferencecode import make_inference
+from ml_data_utils import norm_banned_image_fetch, log_results,  load_constants
 from fastapi.responses import JSONResponse
-from nsfw_detector import predict
-import pillow_heif
-import requests
-import keras
-import numpy as np
-import io
-import PIL
-from datetime import datetime
-from PIL import Image
+import yaml
+
 app = FastAPI()
+constants = load_constants('constants.yaml')
+misclassification = constants['MISCLASSIFICATION']
+returning = constants["RETURN_MESSAGES"]
+mini_counter = 0
+def update_misclassification_count(count):
+    with open('constants.yaml', 'r', encoding='utf8') as yaml_file:
+        config = yaml.safe_load(yaml_file)
 
-# Load the model when the application starts
-model_path = 'updated_modelv3.h5'
-model = predict.load_model(model_path)
+    config['MISCLASSIFICATION'] = count
 
-def download_file(url: str):
-    response = requests.get(url)
-    response.raise_for_status()
-    return response.content
-
-def load_image_from_bytes(image_content: bytes, image_size=(299, 299)):
-    #print("00000000",type(image_content))
-    try:
-        image = keras.preprocessing.image.load_img(io.BytesIO(image_content), target_size=image_size)
-    except PIL.UnidentifiedImageError:
-        # Load the HEIC image from the bytearray
-        heif_file = pillow_heif.from_bytes(data=image_content,size=(299,299), mode="RGB")
-        # Convert to a PIL Image
-        image = Image.frombytes(
-            heif_file.mode,
-            heif_file.size,
-            heif_file.data,
-            "raw",
-            heif_file.mode,
-            heif_file.stride,
-        )
-                # Convert the PIL Image to a JPG bytearray
-        jpg_bytearray = io.BytesIO()
-        image.save(jpg_bytearray, format="JPEG")
-        jpg_bytearray = jpg_bytearray.getvalue()
-
-        #finally load to keras
-        image = keras.preprocessing.image.load_img(io.BytesIO(jpg_bytearray), target_size=image_size)
-    image_array = keras.preprocessing.image.img_to_array(image)
-    image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
-    image_array /= 255.0  # Normalize the image
-    return image_array
-
-def decision_function(result, image_path):
-    try:
-        nsfw_threshold = 0.95
-        nsfw_categories = ["class1", "class2"]
-        max_probs = sorted(result[0].items(), key=lambda x: x[1], reverse=True)[:2]
-        for category, prob in max_probs:
-            if category == "class3" and prob > 0.99:
-                    # collect analytics for moderation model upgrade
-                    with open('BANNED_IMAGES.txt', 'a') as f:
-                        f.write("\n{} ---> {} TIME: {}".format(image_path, max_probs, str(datetime.now())))
-            # NSFW content detected, decline the photo
-            else:
-                # collect analytics for moderation model upgrade
-                with open('NORM_IMAGES.txt', 'a') as f:
-                        f.write("\n{} ---> {} TIME: {}".format(image_path, max_probs,str(datetime.now())))
-            if category in nsfw_categories and prob > nsfw_threshold:
-                # collect analytics for moderation model upgrade
-                with open('BANNED_IMAGES.txt', 'a') as f:
-                    f.write("\n{} ---> {} TIME: {}".format(image_path, max_probs, str(datetime.now())))
-
-                data = {"decision": True, "detailed_info": max_probs}
-                return JSONResponse(content={ "status": True, "message": "СКАЙНЕТ РАБОТАЕТ", "code": "SS-10000","data": data})
-        # No NSFW content detected, don't decline the photo
-
-        # collect analytics for moderation model upgrade
-        with open('NORM_IMAGES.txt', 'a') as f:
-            f.write("\n{} ---> {} TIME: {}".format(image_path, max_probs,str(datetime.now())))
-
-
-        data = {"decision": False, "detailed_info": max_probs}
-        return JSONResponse(content={ "status": True, "message": "СКАЙНЕТ РАБОТАЕТ", "code": "SS-10000","data": data})
-    except Exception as e:
-        return {"Message": "{}".format(e)}
-
+    with open('constants.yaml', 'w') as yaml_file:
+        yaml.dump(config, yaml_file)
 
 @app.post("/classify")
-async def classify_image(url: str = Form(None), file: UploadFile = File(None), image_path:str = Form(None)):
-    # Perform classification using the loaded model
-    # result = predict.classify(model, file.filename)
+async def classify_image(image_path: str = Form(None),
+                         file: UploadFile = File(None)):
+    """
+    Classify images provided via URL, file upload, or file path.
 
-    if file is not None:
-        try:
-            uploaded_image = file.file.read()
-        except Exception as e:
-            #return JSONResponse(content={f"Message": "{}".format(e)})
-            return JSONResponse(content={ "status": False, "message": "ERROR", "code": "SS-10000","data": e})
-        #print(type(uploaded_image))
-        nd_images = load_image_from_bytes(uploaded_image)
-        #print(type(nd_images))
-        result = predict.classify_nd(model,nd_images)
-        return decision_function(result)
+    Args:
+        url (str, optional): URL of the image to classify. Defaults    to None.
+        file (UploadFile, optional): Uploaded image file. Defaults to None.
+        image_path (str, optional): Local path of the image file. Defaults to None.
 
-    elif url is not None:
-        try:
-            image_content = download_file(url)
-        except Exception as e:
-            #return JSONResponse(content={f"Message": "{}".format(e)})
-            return JSONResponse(content={ "status": False, "message": "ERROR", "code": "SS-10000","data": e})
-        #print(type(image_content))
-        nd_images = load_image_from_bytes(image_content)
-        result = predict.classify_nd(model, nd_images)
-        return decision_function(result)
+    Returns:
+        JSONResponse: JSON response containing the classification results.
+    """
 
-    elif image_path is not None:
-        # read image file
-        print("IMAGE PATH ---->",image_path)
-        try:
-            img_bytes_io = io.BytesIO(open(image_path, 'rb').read())
-        except Exception as e:
-            #return JSONResponse(content={f"Message": "{}".format(e)})
-            return JSONResponse(content={ "status": False, "message": "ERROR", "code": "SS-10000","data": e})
+    return make_inference(file=file, image_path=image_path)
 
-        nd_image = load_image_from_bytes(img_bytes_io.read())
-        result = predict.classify_nd(model, nd_image)
-        return decision_function(result,image_path)
-    #return JSONResponse(content={"Message": "No file or URL provided"})
-    return JSONResponse(content={ "status": False, "message": "ERROR", "code": "SS-10000","data": "URL | FILE | IMAGE_PATH was not provided"})
+@app.post("/feedback")
+async def request_feedback(image_path: str, classification_decision: dict, verdict: int):
+    """
+    Receive feedback on the classification decision.
+    Works with such command line prompt: 
+    curl -X POST -H "Content-Type: application/json" -d "{\"status\": true, \"data\": {\"detailed_info\": [[\"leopard\", 0.9076730608940125]]}}" "http://localhost:8000/feedback?image_path=/path/to/image.jpg&verdict=1"
+    """
+    log_results(image_path, classification_decision, verdict)
+    global misclassification
+    global mini_counter
+    global returning
+    if verdict == 0:
+        misclassification+=1
+        mini_counter+=1
+        if mini_counter == 10:
+            mini_counter = 0
+            update_misclassification_count(misclassification)
+    if misclassification >= 10:
+        trigger = await train_trigger()
+        returning["status"] = True
+        returning["message"] = trigger
+        return returning
 
+    returning["status"] = True
+    returning["message"] = "Feedback Received!"
+    return returning
+
+async def fetch_images(request_data: dict):
+    normal_images_path = request_data.get("normal_images_path", None)
+    banned_images_path = request_data.get("banned_images_path", None)
+    batch_size = request_data.get("batch_size", 5)
+    return norm_banned_image_fetch(normal_images_path, banned_images_path, batch_size)
+
+async def train_trigger():
+
+    return "Training started"
 
 @app.get("/health")
 async def health_check():
-    return {
-            "status": True,
-            "message": "Malades !!!",
-            "code": "SS-10000",
-            "data": "СКАЙНЕТ РАБОТАЕТ"
-            }
+    """
+    Check the health status of the application.
+
+    Returns:
+        JSONResponse: JSON response indicating the health status.
+    """
+    print("HERE")
+    global returning
+    returning["status"] = True
+    returning["message"] = "Well Done !!!"
+    return returning
