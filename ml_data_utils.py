@@ -17,23 +17,6 @@ Functions:
 Variables:
 - DATASET_DEST_PATH: The destination path for the image dataset.
 
-This module provides functions for image preprocessing, parsing, and data validation.
-
-Functions:
-1. load_image_from_bytes(image_content: bytes, image_size=(299, 299)) -> np.array:
-    Load an image from bytes, preprocess it, and return it as a numpy array.
-
-2. parse_and_download_images(collected_images_path: str) -> None:
-    Parse and download images from BANNED & NORM IMAGES text files.
-
-3. check_image_count(filename: str) -> int:
-    Count the number of lines in a file.
-
-4. data_validation(train_set_path: str, test_set_path: str) -> bool:
-    Check if all images in the training and testing datasets are in valid formats.
-
-Variables:
-- DATASET_DEST_PATH: The destination path for the image dataset.
 """
 import imghdr
 import base64
